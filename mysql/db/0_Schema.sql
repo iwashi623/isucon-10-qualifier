@@ -41,8 +41,6 @@ ADD INDEX door_widt_height_index(door_width, door_height);
 ALTER TABLE isuumo.estate
 ADD INDEX door_height_index(door_height);
 ALTER TABLE isuumo.estate
-ADD INDEX estate_rent_index(rent);
+ADD INDEX estate_rent_popularity_desc_id_idx(rent, popularity_desc, id);
 ALTER TABLE isuumo.estate
-ADD INDEX idx_estate_rent_popularity_id(rent, popularity, id);
-ALTER TABLE isuumo.estate
-ADD INDEX estate_popularity_id_idx(popularity_desc, id);
+ADD INDEX estate_rent_popularity_id_idx(rent, popularity, id);
