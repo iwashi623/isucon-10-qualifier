@@ -2,7 +2,7 @@ DROP DATABASE IF EXISTS isuumo;
 CREATE DATABASE isuumo;
 
 DROP TABLE IF EXISTS isuumo.estate;
-DROP TABLE IF EXISTS isuumo.chair;
+DROP TABLE IF EXISTS isuumo.estate;
 
 CREATE TABLE isuumo.estate
 (
@@ -36,3 +36,8 @@ CREATE TABLE isuumo.chair
     popularity  INTEGER         NOT NULL,
     stock       INTEGER         NOT NULL
 );
+
+ALTER TABLE chair ADD INDEX stock_index(stock);
+ALTER TABLE estate ADD INDEX door_widt_index(door_widt);
+ALTER TABLE estate ADD INDEX door_height_index(door_height);
+ALTER TABLE estate ADD INDEX rent_index(rent);
