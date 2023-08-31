@@ -22,4 +22,5 @@ show-slow-log:
 bn:
 	nginx-refresh
 	mysql-refresh
+	cd /home/isucon/isuumo/bench
 	./bench -target-url http://127.0.0.1
