@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -344,7 +343,14 @@ func getChairDetail(c echo.Context) error {
 
 	chair := Chair{}
 	query := `SELECT * FROM chair WHERE id = ?`
+
+	seg := createDataStoreSegment(query, "chair", "SELECT", id)
+	seg.StartTime = txn.StartSegmentNow()
+
 	err = db.Get(&chair, query, id)
+
+	seg.End()
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Echo().Logger.Infof("requested id's chair not found : %v", id)
@@ -1024,4 +1030,36 @@ func (cs Coordinates) coordinatesToText() string {
 		points = append(points, fmt.Sprintf("%f %f", c.Latitude, c.Longitude))
 	}
 	return fmt.Sprintf("'POLYGON((%s))'", strings.Join(points, ","))
+}
+
+func createDataStoreSegment(query, collection, operation string, params ...interface{}) newrelic.DatastoreSegment {
+	mySQLConnectionData = NewMySQLConnectionEnv()
+
+	queryParams := make(map[string]interface{})
+	var i = 0
+	for _, param := range params {
+		switch x := param.(type) {
+		case []interface{}:
+			for _, p := range x {
+				queryParams["?_"+strconv.Itoa(i)] = p
+				i++
+			}
+		case interface{}:
+			queryParams["?_"+strconv.Itoa(i)] = x
+			i++
+		default:
+			//ignore
+		}
+	}
+
+	return newrelic.DatastoreSegment{
+		Product:            newrelic.DatastoreMySQL,
+		Collection:         collection,
+		Operation:          operation,
+		ParameterizedQuery: query,
+		QueryParameters:    queryParams,
+		Host:               mySQLConnectionData.Host,
+		PortPathOrID:       mySQLConnectionData.Port,
+		DatabaseName:       mySQLConnectionData.DBName,
+	}
 }
