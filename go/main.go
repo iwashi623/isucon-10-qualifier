@@ -243,7 +243,7 @@ func init() {
 
 func main() {
 	app, err := newrelic.NewApplication(
-		newrelic.ConfigAppName("NEW_RELIC_APP_NAME"),
+		newrelic.ConfigAppName("isucon10-qualifier-20231208"),
 		newrelic.ConfigLicense(os.Getenv("NEW_RELIC_LICENSE_KEY")),
 		newrelic.ConfigDistributedTracerEnabled(true),
 		newrelic.ConfigAppLogForwardingEnabled(true),
