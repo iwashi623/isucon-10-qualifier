@@ -13,9 +13,12 @@ import (
 	"strconv"
 	"strings"
 
+	_ "net/http/pprof"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo-contrib/pprof"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
 )
@@ -241,6 +244,7 @@ func init() {
 func main() {
 	// Echo instance
 	e := echo.New()
+	pprof.Register(e)
 	e.Debug = true
 	e.Logger.SetLevel(log.DEBUG)
 
