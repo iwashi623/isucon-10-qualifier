@@ -6,7 +6,7 @@ bn:
 	make mysql-log-refresh
 	/home/isucon/isuumo/bench/bench -target-url http://127.0.0.1
 
-.PHONY: nginx-refresh
+.PHONY: nginx-log-refresh
 nginx-refresh:
 	sudo rm /var/log/nginx/access.log && sudo systemctl reload nginx
 
