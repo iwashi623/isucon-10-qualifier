@@ -9,6 +9,7 @@ require (
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.4.1
 	github.com/newrelic/go-agent/v3 v3.28.1
+	github.com/newrelic/go-agent/v3/integrations/nrecho-v3 v1.0.2
 	golang.org/x/net v0.19.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231127180814-3a041ad873d4 // indirect
 )
