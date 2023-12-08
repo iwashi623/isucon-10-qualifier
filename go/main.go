@@ -17,9 +17,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
-	"github.com/newrelic/go-agent/v3/integrations/nrecho-v3"
 	_ "github.com/newrelic/go-agent/v3/integrations/nrmysql"
-	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 const Limit = 20
@@ -242,17 +240,6 @@ func init() {
 }
 
 func main() {
-	app, err := newrelic.NewApplication(
-		newrelic.ConfigAppName("isucon10-qualifier-20231208"),
-		newrelic.ConfigLicense(os.Getenv("NEW_RELIC_LICENSE_KEY")),
-		newrelic.ConfigDistributedTracerEnabled(true),
-		newrelic.ConfigAppLogForwardingEnabled(true),
-	)
-	if err != nil {
-		fmt.Printf("%v\n", err)
-		os.Exit(1)
-	}
-
 	// Echo instance
 	e := echo.New()
 	e.Debug = true
@@ -261,10 +248,6 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(nrecho.Middleware(app))
-
-	txn := app.StartTransaction("main()")
-	defer txn.End()
 
 	// Initialize
 	e.POST("/initialize", initialize)
@@ -289,7 +272,7 @@ func main() {
 
 	mySQLConnectionData = NewMySQLConnectionEnv()
 
-	db, err = mySQLConnectionData.ConnectDB()
+	db, err := mySQLConnectionData.ConnectDB()
 	if err != nil {
 		e.Logger.Fatalf("DB connection failed : %v", err)
 	}
@@ -302,8 +285,6 @@ func main() {
 }
 
 func initialize(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
 		filepath.Join(sqlDir, "0_Schema.sql"),
@@ -333,8 +314,6 @@ func initialize(c echo.Context) error {
 }
 
 func getChairDetail(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.Echo().Logger.Errorf("Request parameter \"id\" parse error : %v", err)
@@ -343,13 +322,7 @@ func getChairDetail(c echo.Context) error {
 
 	chair := Chair{}
 	query := `SELECT * FROM chair WHERE id = ?`
-
-	seg := createDataStoreSegment(query, "chair", "SELECT", id)
-	seg.StartTime = txn.StartSegmentNow()
-
 	err = db.Get(&chair, query, id)
-
-	seg.End()
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -367,8 +340,6 @@ func getChairDetail(c echo.Context) error {
 }
 
 func postChair(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	header, err := c.FormFile("chairs")
 	if err != nil {
 		c.Logger().Errorf("failed to get form file: %v", err)
@@ -425,8 +396,6 @@ func postChair(c echo.Context) error {
 }
 
 func searchChairs(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
 
@@ -563,8 +532,6 @@ func searchChairs(c echo.Context) error {
 }
 
 func buyChair(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	m := echo.Map{}
 	if err := c.Bind(&m); err != nil {
 		c.Echo().Logger.Infof("post buy chair failed : %v", err)
@@ -617,14 +584,10 @@ func buyChair(c echo.Context) error {
 }
 
 func getChairSearchCondition(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	return c.JSON(http.StatusOK, chairSearchCondition)
 }
 
 func getLowPricedChair(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	var chairs []Chair
 	query := `SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
 	err := db.Select(&chairs, query, Limit)
@@ -641,8 +604,6 @@ func getLowPricedChair(c echo.Context) error {
 }
 
 func getEstateDetail(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.Echo().Logger.Infof("Request parameter \"id\" parse error : %v", err)
@@ -677,8 +638,6 @@ func getRange(cond RangeCondition, rangeID string) (*Range, error) {
 }
 
 func postEstate(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	header, err := c.FormFile("estates")
 	if err != nil {
 		c.Logger().Errorf("failed to get form file: %v", err)
@@ -734,8 +693,6 @@ func postEstate(c echo.Context) error {
 }
 
 func searchEstates(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
 
@@ -843,8 +800,6 @@ func searchEstates(c echo.Context) error {
 }
 
 func getLowPricedEstate(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	estates := make([]Estate, 0, Limit)
 	query := `SELECT * FROM estate ORDER BY rent ASC, id ASC LIMIT ?`
 	err := db.Select(&estates, query, Limit)
@@ -861,8 +816,6 @@ func getLowPricedEstate(c echo.Context) error {
 }
 
 func searchRecommendedEstateWithChair(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.Logger().Infof("Invalid format searchRecommendedEstateWithChair id : %v", err)
@@ -899,8 +852,6 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 }
 
 func searchEstateNazotte(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	coordinates := Coordinates{}
 	err := c.Bind(&coordinates)
 	if err != nil {
@@ -956,8 +907,6 @@ func searchEstateNazotte(c echo.Context) error {
 }
 
 func postEstateRequestDocument(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	m := echo.Map{}
 	if err := c.Bind(&m); err != nil {
 		c.Echo().Logger.Infof("post request document failed : %v", err)
@@ -991,8 +940,6 @@ func postEstateRequestDocument(c echo.Context) error {
 }
 
 func getEstateSearchCondition(c echo.Context) error {
-	txn := nrecho.FromContext(c)
-	defer txn.End()
 	return c.JSON(http.StatusOK, estateSearchCondition)
 }
 
@@ -1030,36 +977,4 @@ func (cs Coordinates) coordinatesToText() string {
 		points = append(points, fmt.Sprintf("%f %f", c.Latitude, c.Longitude))
 	}
 	return fmt.Sprintf("'POLYGON((%s))'", strings.Join(points, ","))
-}
-
-func createDataStoreSegment(query, collection, operation string, params ...interface{}) newrelic.DatastoreSegment {
-	mySQLConnectionData = NewMySQLConnectionEnv()
-
-	queryParams := make(map[string]interface{})
-	var i = 0
-	for _, param := range params {
-		switch x := param.(type) {
-		case []interface{}:
-			for _, p := range x {
-				queryParams["?_"+strconv.Itoa(i)] = p
-				i++
-			}
-		case interface{}:
-			queryParams["?_"+strconv.Itoa(i)] = x
-			i++
-		default:
-			//ignore
-		}
-	}
-
-	return newrelic.DatastoreSegment{
-		Product:            newrelic.DatastoreMySQL,
-		Collection:         collection,
-		Operation:          operation,
-		ParameterizedQuery: query,
-		QueryParameters:    queryParams,
-		Host:               mySQLConnectionData.Host,
-		PortPathOrID:       mySQLConnectionData.Port,
-		DatabaseName:       mySQLConnectionData.DBName,
-	}
 }
