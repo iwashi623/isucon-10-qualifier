@@ -1,5 +1,4 @@
 SHELL=/bin/bash
-
 .PHONY: bn
 bn:
 	make nginx-log-refresh
@@ -7,7 +6,7 @@ bn:
 	/home/isucon/isuumo/bench/bench -target-url http://127.0.0.1
 
 .PHONY: nginx-log-refresh
-nginx-refresh:
+nginx-log-refresh:
 	sudo rm /var/log/nginx/access.log && sudo systemctl reload nginx
 
 .PHONY: mysql-log-refresh
